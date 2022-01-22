@@ -1,13 +1,18 @@
 package com.example.topproject008_simplewebbrowser
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.inputmethod.EditorInfo
+import android.webkit.URLUtil
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.ImageButton
+import androidx.core.widget.ContentLoadingProgressBar
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 class MainActivity : AppCompatActivity() {
 
@@ -27,8 +32,16 @@ class MainActivity : AppCompatActivity() {
         findViewById(R.id.imageButtonForward)
     }
 
+    private val refreshLayut: SwipeRefreshLayout by lazy {
+        findViewById(R.id.refreshLayout)
+    }
+
     private val webView: WebView by lazy {
         findViewById(R.id.webView)
+    }
+
+    private val progressBar: ContentLoadingProgressBar by lazy {
+        findViewById(R.id.progressBar)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,6 +65,7 @@ class MainActivity : AppCompatActivity() {
     private fun initViews() {
         webView.apply {
             webViewClient = WebViewClient()
+            webChromeClient = WebChromeClient()
             settings.javaScriptEnabled = true // 자바 스크립트를 사용할 것이라는 코드
             loadUrl(DEFAULT_URL)
         }
@@ -68,7 +82,12 @@ class MainActivity : AppCompatActivity() {
 
         addressBar.setOnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                webView.loadUrl(v.text.toString())
+                val loadingUrl = v.text.toString()
+                if(URLUtil.isNetworkUrl(loadingUrl)){
+                    webView.loadUrl(loadingUrl)
+                }else{
+                    webView.loadUrl("http://$loadingUrl")
+                }
             }
             return@setOnEditorActionListener false
         }
@@ -83,9 +102,41 @@ class MainActivity : AppCompatActivity() {
         imageButtonForward.setOnClickListener {
             webView.goForward()
         }
+//     새로고침
+        refreshLayut.setOnRefreshListener {
+            webView.reload()
+        }
+
     }
 
-    companion object{
-        private  const val DEFAULT_URL = "http://www.goolge.com"
+    inner class WebViewClient : android.webkit.WebViewClient() {
+
+        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+            super.onPageStarted(view, url, favicon)
+
+            progressBar.show()
+        }
+
+        override fun onPageFinished(view: WebView?, url: String?) {
+            super.onPageFinished(view, url)
+
+            refreshLayut.isRefreshing = false
+            progressBar.hide()
+            imageButtonBack.isEnabled = webView.canGoBack()
+            imageButtonForward.isEnabled = webView.canGoForward()
+            addressBar.setText(url)
+        }
     }
+
+    inner class WebchromeClient : android.webkit.WebChromeClient() {
+        override fun onProgressChanged(view: WebView?, newProgress: Int) {
+            super.onProgressChanged(view, newProgress)
+            progressBar.progress = newProgress
+        }
+    }
+
+    companion object {
+        private const val DEFAULT_URL = "http://www.goolge.com"
+    }
+
 }

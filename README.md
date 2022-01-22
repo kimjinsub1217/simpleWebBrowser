@@ -10,5 +10,7 @@
 </ul>
 
 ## ✔실행화면
+![image](https://user-images.githubusercontent.com/76811495/150629193-8c3c819d-3fcc-4e38-bfd6-2636370d9a9e.png)
+![image](https://user-images.githubusercontent.com/76811495/150629208-25fe7063-c64e-4574-9ac4-25c927d1f0ca.png)
 
 
